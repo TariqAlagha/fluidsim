@@ -12,8 +12,10 @@ int main()
     SDL_Init(SDL_INIT_VIDEO);
     SDL_Window* window = SDL_CreateWindow("Fluid Sim", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, SCREEN_WIDTH, SCREEN_HEIGHT, 0);
     SDL_Surface* surface = SDL_GetWindowSurface(window);
+
     SDL_Rect rectangle = (SDL_Rect){50,50,100,50};
     SDL_FillRect(surface, &rectangle, COLOR_WHITE);
+  
     SDL_Rect blue_rectangle = (SDL_Rect){150,50,100,50};
     SDL_FillRect(surface, &blue_rectangle, COLOR_BLUE);
 
