@@ -1,3 +1,4 @@
+#include "SDL_cpuinfo.h"
 #include "SDL_events.h"
 #include "SDL_keycode.h"
 #include "SDL_rect.h"
@@ -25,6 +26,14 @@ struct Cell {
   int x;
   int y;
 };
+
+struct CellFlow {
+  double flow_left;
+  double flow_right;
+  double flow_down;
+  double flow_up;
+};
+
 void draw_cell(SDL_Surface *surface, struct Cell cell) {
   int pixel_x = cell.x * CELL_SIZE;
   int pixel_y = cell.y * CELL_SIZE;
@@ -44,6 +53,7 @@ void draw_cell(SDL_Surface *surface, struct Cell cell) {
     SDL_FillRect(surface, &cell_rect, COLOR_WHITE);
   }
 }
+
 void draw_environment(SDL_Surface *surface,
                       struct Cell environment[ROWS * COLUMNS]) {
   for (int i = 0; i < ROWS * COLUMNS; i++) {
@@ -66,6 +76,42 @@ void initialize_environment(struct Cell environment[ROWS * COLUMNS]) {
   for (int i = 0; i < ROWS; i++) {
     for (int j = 0; j < COLUMNS; j++) {
       environment[j + COLUMNS * i] = (struct Cell){WATER_TYPE, 0, j, i};
+    }
+  }
+}
+
+void simulation_step(struct Cell environment[ROWS * COLUMNS]) {
+  // water should drop to the cell below
+  struct CellFlow flows[ROWS * COLUMNS];
+
+  for (int i = 0; i < ROWS * COLUMNS; i++) {
+    flows[i] = (struct CellFlow){0, 0, 0, 0};
+  }
+
+  for (int i = 0; i < ROWS; i++) {
+    for (int j = 0; j < COLUMNS; j++) {
+      struct Cell current_cell = environment[j + COLUMNS * i];
+      if (current_cell.type == WATER_TYPE && i < ROWS - 1) {
+        // water can fall down
+        if (environment[j + COLUMNS * i].fill_level != 0) {
+          flows[j + COLUMNS * i].flow_down = flows[j + COLUMNS * i].flow_down =
+              1;
+        }
+      }
+    }
+  }
+  for (int i = 0; i < ROWS; i++) {
+    for (int j = 0; j < COLUMNS; j++) {
+      if (i > 0) {
+        // is water flowing into the current cell
+        struct Cell updated_cell = environment[j + COLUMNS * i];
+        struct Cell cell_above = environment[j + COLUMNS * (i - 1)];
+        struct CellFlow cell_above_flow = flows[j + COLUMNS * (i - 1)];
+
+        environment[j + COLUMNS * i].fill_level += cell_above_flow.flow_down;
+        environment[j + COLUMNS * (i - 1)].fill_level -=
+            cell_above_flow.flow_down;
+      }
     }
   }
 }
@@ -112,9 +158,13 @@ int main() {
         }
       }
     }
+
+    // perform simulation steps
+    simulation_step(environment);
+
     draw_environment(surface, environment);
     draw_grid(surface);
     SDL_UpdateWindowSurface(window);
-    SDL_Delay(100);
+    SDL_Delay(50);
   }
 }
