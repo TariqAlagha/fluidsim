@@ -12,7 +12,7 @@
 #define COLOR_BLUE 0x4287f5
 #define COLOR_GRAY 0x1f1f1f1f
 #define COLOR_BLACK 0x00000000
-#define CELL_SIZE 20
+#define CELL_SIZE 10
 #define COLUMNS SCREEN_WIDTH / CELL_SIZE
 #define ROWS SCREEN_HEIGHT / CELL_SIZE
 #define LINE_WIDTH 2
@@ -82,16 +82,46 @@ void simulation_step(struct Cell environment[ROWS * COLUMNS]) {
 
   for (int i = 0; i < ROWS; i++) {
     for (int j = 0; j < COLUMNS; j++) {
+
       // Rule 1: Water flows down
       struct Cell source_cell = environment[j + COLUMNS * i];
       if (source_cell.type == WATER_TYPE && i < ROWS - 1) {
         struct Cell destination_cell = environment[j + COLUMNS * (i + 1)];
         // How much fluid can flow down into the destination_cell
         if (destination_cell.fill_level < source_cell.fill_level) {
-          double liqid_amount =
-              environment_next[j + COLUMNS * (i + 1)].fill_level +=
-              source_cell.fill_level;
           environment_next[j + COLUMNS * i].fill_level = 0;
+          environment_next[j + COLUMNS * (i + 1)].fill_level +=
+              source_cell.fill_level;
+        }
+      }
+      int below_full_or_solid = 0;
+      if (i + 1 == ROWS || environment[j + COLUMNS * (i + 1)].fill_level >= 1 ||
+          environment[j + COLUMNS * (i + 1)].type == SOLID_TYPE) {
+        // Rule 2: Water flows left and right
+        if (source_cell.type == WATER_TYPE && j > 0) {
+          // How much liquid can flow to the left?
+          struct Cell destination_cell = environment[(j - 1) + COLUMNS * i];
+          // How much fluid can flow into the destination_cell
+          if (destination_cell.type == WATER_TYPE &&
+              destination_cell.fill_level < source_cell.fill_level) {
+            double delta_fill =
+                source_cell.fill_level - destination_cell.fill_level;
+            environment_next[j + COLUMNS * i].fill_level -= delta_fill / 3;
+            environment_next[(j - 1) + COLUMNS * i].fill_level +=
+                delta_fill / 3;
+          }
+        }
+        if (source_cell.type == WATER_TYPE && j < COLUMNS - 1) {
+          // How much liquid can flow to the right?
+          struct Cell destination_cell = environment[(j + 1) + COLUMNS * i];
+          // How much fluid can flow into the destination_cell
+          if (destination_cell.fill_level < source_cell.fill_level) {
+            double delta_fill =
+                source_cell.fill_level - destination_cell.fill_level;
+            environment_next[j + COLUMNS * i].fill_level -= delta_fill / 2;
+            environment_next[(j + 1) + COLUMNS * i].fill_level +=
+                delta_fill / 2;
+          }
         }
       }
     }
@@ -150,6 +180,6 @@ int main() {
     draw_environment(surface, environment);
     draw_grid(surface);
     SDL_UpdateWindowSurface(window);
-    SDL_Delay(50);
+    SDL_Delay(0);
   }
 }
