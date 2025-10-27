@@ -118,9 +118,9 @@ void simulation_step(struct Cell environment[ROWS * COLUMNS]) {
           if (destination_cell.fill_level < source_cell.fill_level) {
             double delta_fill =
                 source_cell.fill_level - destination_cell.fill_level;
-            environment_next[j + COLUMNS * i].fill_level -= delta_fill / 2;
+            environment_next[j + COLUMNS * i].fill_level -= delta_fill / 3;
             environment_next[(j + 1) + COLUMNS * i].fill_level +=
-                delta_fill / 2;
+                delta_fill / 3;
           }
         }
       }
@@ -170,6 +170,9 @@ int main() {
         }
         if (event.key.keysym.sym == SDLK_BACKSPACE) {
           delete_mode = !delete_mode;
+        }
+        if (event.key.keysym.sym == SDLK_r) {
+          initialize_environment(environment);
         }
       }
     }
